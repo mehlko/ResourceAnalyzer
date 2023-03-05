@@ -150,10 +150,33 @@ class Process extends React.Component {
   async analyze() {
     log('test');
     var my = this.bpmnViewer._moddle;
-    console.log(this.bpmnViewer);
-    console.log(my);
     var result = await my.toXML(this.bpmnViewer._definitions);
-    console.log(result.xml);
+
+    var parser = new DOMParser();
+    var xmlDoc = parser.parseFromString(result.xml, 'text/xml');
+    console.log(xmlDoc);
+    var sequenceFlows = xmlDoc.getElementsByTagName('bpmn2:sequenceFlow');
+
+    const sequenceFlowMapSource = new Map();
+    for (let sequenceFlow of sequenceFlows) {
+      sequenceFlowMapSource.set(
+        sequenceFlow.getAttribute('sourceRef'),
+        sequenceFlow
+      );
+    }
+
+    //calulate path
+    var startEvents = xmlDoc.getElementsByTagName('bpmn2:startEvent');
+    for (let startEvent of startEvents) {
+      var currentId = startEvent.getAttribute('id');
+      while (sequenceFlowMapSource.has(currentId)) {
+        console.log(currentId);
+        currentId = sequenceFlowMapSource
+          .get(currentId)
+          .getAttribute('targetRef');
+      }
+      console.log(currentId);
+    }
   }
 
   render() {
@@ -207,7 +230,6 @@ class Model extends React.Component {
         <h1>Model</h1>
         <Process
           url="https://raw.githubusercontent.com/bpmn-io/bpmn-js-examples/master/modeler/resources/newDiagram.bpmn"
-          onLoading={log}
         />
         <Function2 />
         <Realization />

@@ -1,3 +1,12 @@
 # ResourceAnalyzer
 
-[Edit on StackBlitz ⚡️](https://stackblitz.com/edit/web-platform-pzdl2t)
+## Features
+
+Load BPMN
+Display BPMN
+
+## Planned Features
+
+Load required function from comments from BPMN Task
+Load UML class diagram
+Connect Functions and classes
