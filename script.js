@@ -155,8 +155,11 @@ class Process extends React.Component {
     var parser = new DOMParser();
     var xmlDoc = parser.parseFromString(result.xml, 'text/xml');
     console.log(xmlDoc);
-    var sequenceFlows = xmlDoc.getElementsByTagName('bpmn2:sequenceFlow');
-
+    var sequenceFlows = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'sequenceFlow'
+    );
+    log(sequenceFlows);
     const sequenceFlowMapSource = new Map();
     for (let sequenceFlow of sequenceFlows) {
       sequenceFlowMapSource.set(
@@ -166,7 +169,10 @@ class Process extends React.Component {
     }
 
     //calulate path
-    var startEvents = xmlDoc.getElementsByTagName('bpmn2:startEvent');
+    var startEvents = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'startEvent'
+    );
     for (let startEvent of startEvents) {
       var currentId = startEvent.getAttribute('id');
       while (sequenceFlowMapSource.has(currentId)) {
@@ -228,9 +234,7 @@ class Model extends React.Component {
     return (
       <div>
         <h1>Model</h1>
-        <Process
-          url="https://raw.githubusercontent.com/bpmn-io/bpmn-js-examples/master/modeler/resources/newDiagram.bpmn"
-        />
+        <Process url="https://mehlko.github.io/ResourceAnalyzer/models/example1.bpmn" />
         <Function2 />
         <Realization />
         <Resource />
