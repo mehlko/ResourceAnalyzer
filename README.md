@@ -4,9 +4,9 @@
 
 Load BPMN
 Display BPMN
+Load required function from comments from BPMN Task
 
 ## Planned Features
 
-Load required function from comments from BPMN Task
 Load UML class diagram
 Connect Functions and classes

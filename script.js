@@ -47,200 +47,6 @@ const {
   TabList,
 } = MaterialUI;
 
-class Process extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {};
-
-    this.containerRef = React.createRef();
-    this.handleClick = this.handleClick.bind(this);
-  }
-
-  componentDidMount() {
-    const { url, diagramXML } = this.props;
-
-    const container = this.containerRef.current;
-
-    this.bpmnViewer = new BpmnJS({ container });
-
-    this.bpmnViewer.on('import.done', (event) => {
-      const { error, warnings } = event;
-
-      if (error) {
-        return this.handleError(error);
-      }
-
-      this.bpmnViewer.get('canvas').zoom('fit-viewport');
-
-      return this.handleShown(warnings);
-    });
-
-    if (url) {
-      return this.fetchDiagram(url);
-    }
-
-    if (diagramXML) {
-      return this.displayDiagram(diagramXML);
-    }
-  }
-
-  componentWillUnmount() {
-    this.bpmnViewer.destroy();
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const { props, state } = this;
-
-    if (props.url !== prevProps.url) {
-      return this.fetchDiagram(props.url);
-    }
-
-    const currentXML = props.diagramXML || state.diagramXML;
-
-    const previousXML = prevProps.diagramXML || prevState.diagramXML;
-
-    if (currentXML && currentXML !== previousXML) {
-      return this.displayDiagram(currentXML);
-    }
-  }
-
-  displayDiagram(diagramXML) {
-    this.bpmnViewer.importXML(diagramXML);
-  }
-
-  fetchDiagram(url) {
-    this.handleLoading();
-
-    fetch(url)
-      .then((response) => response.text())
-      .then((text) => this.setState({ diagramXML: text }))
-      .catch((err) => this.handleError(err));
-  }
-
-  handleLoading() {
-    const { onLoading } = this.props;
-
-    if (onLoading) {
-      onLoading();
-    }
-  }
-
-  handleError(err) {
-    const { onError } = this.props;
-
-    if (onError) {
-      onError(err);
-    }
-  }
-
-  handleShown(warnings) {
-    const { onShown } = this.props;
-
-    if (onShown) {
-      onShown(warnings);
-    }
-  }
-
-  handleClick(e) {
-    e.preventDefault();
-    this.analyze();
-  }
-
-  async analyze() {
-    log('test');
-    var my = this.bpmnViewer._moddle;
-    var result = await my.toXML(this.bpmnViewer._definitions);
-
-    var parser = new DOMParser();
-    var xmlDoc = parser.parseFromString(result.xml, 'text/xml');
-    console.log(xmlDoc);
-    var sequenceFlows = xmlDoc.getElementsByTagNameNS(
-      'http://www.omg.org/spec/BPMN/20100524/MODEL',
-      'sequenceFlow'
-    );
-    log(sequenceFlows);
-    const sequenceFlowMapSource = new Map();
-    for (let sequenceFlow of sequenceFlows) {
-      sequenceFlowMapSource.set(
-        sequenceFlow.getAttribute('sourceRef'),
-        sequenceFlow
-      );
-    }
-    var associations = xmlDoc.getElementsByTagNameNS(
-      'http://www.omg.org/spec/BPMN/20100524/MODEL',
-      'association'
-    );
-    const associationMapSource = new Map();
-    for (let association of associations) {
-      associationMapSource.set(
-        association.getAttribute('sourceRef'),
-        association
-      );
-    }
-    var textAnnotations = xmlDoc.getElementsByTagNameNS(
-      'http://www.omg.org/spec/BPMN/20100524/MODEL',
-      'textAnnotation'
-    );
-    const textAnnotationMap = new Map();
-    for (let textAnnotation of textAnnotations) {
-      log('xxx' + textAnnotation.getAttribute('id'));
-      textAnnotationMap.set(textAnnotation.getAttribute('id'), textAnnotation);
-    }
-
-    //calulate path
-    var startEvents = xmlDoc.getElementsByTagNameNS(
-      'http://www.omg.org/spec/BPMN/20100524/MODEL',
-      'startEvent'
-    );
-    for (let startEvent of startEvents) {
-      var currentId = startEvent.getAttribute('id');
-      while (sequenceFlowMapSource.has(currentId)) {
-        console.log(currentId);
-        currentId = sequenceFlowMapSource
-          .get(currentId)
-          .getAttribute('targetRef');
-
-        if (associationMapSource.has(currentId)) {
-          console.log('yuhu');
-          var association = associationMapSource.get(currentId);
-          var target = association.getAttribute('targetRef');
-          log('yyy' + target);
-          if (textAnnotationMap.has(target)) {
-            console.log('x' + target);
-            console.log(
-              textAnnotationMap
-                .get(target)
-                .getElementsByTagNameNS(
-                  'http://www.omg.org/spec/BPMN/20100524/MODEL',
-                  'text'
-                )[0].innerHTML
-            );
-          }
-        }
-
-        sequenceFlowMapSource.get(currentId);
-      }
-      console.log(currentId);
-    }
-  }
-
-  render() {
-    return (
-      <div>
-        <div
-          id="bpmn"
-          className="react-bpmn-diagram-container"
-          ref={this.containerRef}
-        ></div>
-        <Button onClick={this.handleClick} variant="outlined">
-          Analyze
-        </Button>
-      </div>
-    );
-  }
-}
-
 class Realization extends React.Component {
   render() {
     return (
@@ -270,11 +76,115 @@ class Resource extends React.Component {
 }
 
 class Model extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { processModel: '', functions2: ['halllo', 'yuhu'] };
+
+    this.handleProcessModelChange = this.handleProcessModelChange.bind(this);
+  }
+
+  handleProcessModelChange(xmlDoc) {
+    this.setState({ processModel: xmlDoc }, () => {
+      this.analyze();
+    });
+  }
+
+  async analyze() {
+    var xmlDoc = this.state.processModel;
+    log(xmlDoc);
+    var sequenceFlows = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'sequenceFlow'
+    );
+    const sequenceFlowMapSource = new Map();
+    for (let sequenceFlow of sequenceFlows) {
+      sequenceFlowMapSource.set(
+        sequenceFlow.getAttribute('sourceRef'),
+        sequenceFlow
+      );
+    }
+    var associations = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'association'
+    );
+    const associationMapSource = new Map();
+    for (let association of associations) {
+      associationMapSource.set(
+        association.getAttribute('sourceRef'),
+        association
+      );
+    }
+    var textAnnotations = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'textAnnotation'
+    );
+    const textAnnotationMap = new Map();
+    for (let textAnnotation of textAnnotations) {
+      textAnnotationMap.set(textAnnotation.getAttribute('id'), textAnnotation);
+    }
+
+    //calulate path
+    var path = [];
+    var startEvents = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'startEvent'
+    );
+    for (let startEvent of startEvents) {
+      path = [];
+      var currentId = startEvent.getAttribute('id');
+      while (sequenceFlowMapSource.has(currentId)) {
+        path.push(currentId);
+        currentId = sequenceFlowMapSource
+          .get(currentId)
+          .getAttribute('targetRef');
+        sequenceFlowMapSource.get(currentId);
+      }
+      path.push(currentId);
+    }
+    log('test');
+    log(path);
+
+    for (let step of path) {
+      log(step);
+      if (associationMapSource.has(step)) {
+        var association = associationMapSource.get(step);
+        var target = association.getAttribute('targetRef');
+
+        if (textAnnotationMap.has(target)) {
+          var text = textAnnotationMap
+            .get(target)
+            .getElementsByTagNameNS(
+              'http://www.omg.org/spec/BPMN/20100524/MODEL',
+              'text'
+            )[0].innerHTML;
+          if (text.startsWith('Requires:')) {
+            text = text.replace('Requires:', '');
+            var splitted = text.split(',');
+            for (let s of splitted) {
+              log(s.trim());
+              await this.setState({
+                functions2: [...this.state.functions2, s.trim()],
+              });
+            }
+            log(splitted);
+          }
+        }
+      }
+    }
+  }
+
   render() {
+    log(this.state);
     return (
       <div>
         <h1>Model</h1>
-        <Process url="https://mehlko.github.io/ResourceAnalyzer/models/example1.bpmn" />
+        <Process
+          onChangeModel={this.handleProcessModelChange}
+          url="https://mehlko.github.io/ResourceAnalyzer/models/example1.bpmn"
+        />
+        {this.state.functions2.map((fn) => (
+          <li key={fn}>{fn}</li>
+        ))}
         <Function2 />
         <Realization />
         <Resource />
