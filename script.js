@@ -167,6 +167,26 @@ class Process extends React.Component {
         sequenceFlow
       );
     }
+    var associations = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'association'
+    );
+    const associationMapSource = new Map();
+    for (let association of associations) {
+      associationMapSource.set(
+        association.getAttribute('sourceRef'),
+        association
+      );
+    }
+    var textAnnotations = xmlDoc.getElementsByTagNameNS(
+      'http://www.omg.org/spec/BPMN/20100524/MODEL',
+      'textAnnotation'
+    );
+    const textAnnotationMap = new Map();
+    for (let textAnnotation of textAnnotations) {
+      log('xxx' + textAnnotation.getAttribute('id'));
+      textAnnotationMap.set(textAnnotation.getAttribute('id'), textAnnotation);
+    }
 
     //calulate path
     var startEvents = xmlDoc.getElementsByTagNameNS(
@@ -180,6 +200,26 @@ class Process extends React.Component {
         currentId = sequenceFlowMapSource
           .get(currentId)
           .getAttribute('targetRef');
+
+        if (associationMapSource.has(currentId)) {
+          console.log('yuhu');
+          var association = associationMapSource.get(currentId);
+          var target = association.getAttribute('targetRef');
+          log('yyy' + target);
+          if (textAnnotationMap.has(target)) {
+            console.log('x' + target);
+            console.log(
+              textAnnotationMap
+                .get(target)
+                .getElementsByTagNameNS(
+                  'http://www.omg.org/spec/BPMN/20100524/MODEL',
+                  'text'
+                )[0].innerHTML
+            );
+          }
+        }
+
+        sequenceFlowMapSource.get(currentId);
       }
       console.log(currentId);
     }
@@ -194,7 +234,7 @@ class Process extends React.Component {
           ref={this.containerRef}
         ></div>
         <Button onClick={this.handleClick} variant="outlined">
-          Outlined
+          Analyze
         </Button>
       </div>
     );
