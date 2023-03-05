@@ -54,6 +54,7 @@ class Process extends React.Component {
     this.state = {};
 
     this.containerRef = React.createRef();
+    this.handleClick = this.handleClick.bind(this);
   }
 
   componentDidMount() {
@@ -141,12 +142,32 @@ class Process extends React.Component {
     }
   }
 
+  handleClick(e) {
+    e.preventDefault();
+    this.analyze();
+  }
+
+  async analyze() {
+    log('test');
+    var my = this.bpmnViewer._moddle;
+    console.log(this.bpmnViewer);
+    console.log(my);
+    var result = await my.toXML(this.bpmnViewer._definitions);
+    console.log(result.xml);
+  }
+
   render() {
     return (
-      <div
-        className="react-bpmn-diagram-container"
-        ref={this.containerRef}
-      ></div>
+      <div>
+        <div
+          id="bpmn"
+          className="react-bpmn-diagram-container"
+          ref={this.containerRef}
+        ></div>
+        <Button onClick={this.handleClick} variant="outlined">
+          Outlined
+        </Button>
+      </div>
     );
   }
 }
@@ -197,5 +218,3 @@ class Model extends React.Component {
 }
 const container = document.getElementById('container');
 ReactDOM.createRoot(container).render(<Model />);
-
-
